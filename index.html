@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daniele Capuzzo — projects</title>
+<meta name="description" content="Daniele Capuzzo: robot learning, ROS 2 and GPU projects.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='black'/><rect x='3' y='11' width='8' height='2' fill='%23FFB000'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --black: #000000;
+    --amber: #FFB000;      /* phosphor */
+    --amber-hi: #FFD27A;   /* hover / bright */
+    --amber-dim: #A86F00;  /* secondary text */
+    --amber-faint: #4A3100;/* rules, selection */
+    --glow: 0 0 6px rgba(255, 176, 0, .45);
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --crt: "VT323", "IBM Plex Mono", ui-monospace, monospace;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); background: var(--black); }
+  body {
+    margin: 0;
+    background: var(--black);
+    color: var(--amber);
+    font: 400 15px/1.6 var(--mono);
+    text-shadow: var(--glow);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* faint scanlines over everything */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.28) 2px 3px);
+    z-index: 20;
+  }
+  ::selection { background: var(--amber); color: var(--black); text-shadow: none; }
+  a { color: var(--amber); text-decoration: underline; text-decoration-color: var(--amber-dim); text-underline-offset: 3px; }
+  a:hover { color: var(--amber-hi); text-decoration-color: var(--amber-hi); }
+  a:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+
+  main { max-width: 82ch; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+
+  .prompt { color: var(--amber-dim); margin: 0; white-space: pre-wrap; }
+  .prompt b { font-weight: 400; color: var(--amber); }
+  .dim { color: var(--amber-dim); }
+
+  /* hero */
+  .name {
+    font-family: var(--crt);
+    font-weight: 400;
+    font-size: clamp(4rem, 15vw, 9.5rem);
+    line-height: .85;
+    letter-spacing: .01em;
+    margin: .6rem 0 1.2rem;
+    text-shadow: 0 0 14px rgba(255, 176, 0, .55);
+  }
+  .bio { max-width: 62ch; margin: 0 0 2.5rem; }
+
+  /* listings */
+  section { margin-top: 2.6rem; }
+  .dir {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 .9rem;
+    padding-bottom: .4rem;
+    border-bottom: 1px dashed var(--amber-faint);
+  }
+  .entry {
+    display: grid;
+    grid-template-columns: 23ch 1fr;
+    gap: .2rem 1.5rem;
+    margin: 0 0 1.6rem;
+  }
+  .entry .meta { color: var(--amber-dim); white-space: pre; font-size: 13px; padding-top: .2rem; }
+  .entry h3 { margin: 0; font-size: 17px; font-weight: 600; }
+  .entry p { margin: .25rem 0 0; max-width: 60ch; }
+  .entry .stack { color: var(--amber-dim); font-size: 13px; }
+
+  .others { list-style: none; padding: 0; margin: 0; }
+  .others li { display: grid; grid-template-columns: 30ch 1fr; gap: 1.5rem; margin-bottom: .35rem; }
+
+  /* interactive shell */
+  .shell { margin-top: 3rem; }
+  #log p { margin: 0; white-space: pre-wrap; }
+  .line { display: flex; align-items: baseline; gap: .6ch; }
+  .line label { color: var(--amber-dim); white-space: nowrap; }
+  #cmd {
+    flex: 1; min-width: 0;
+    background: transparent; border: 0; padding: 0;
+    color: var(--amber); font: inherit; text-shadow: inherit;
+    caret-color: var(--amber);
+  }
+  #cmd:focus-visible { outline: none; }
+  .hint { font-size: 13px; margin-top: .4rem; }
+
+  /* tmux-like status bar */
+  .status {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: .25rem 1rem calc(.25rem + env(safe-area-inset-bottom, 0px));
+    background: var(--amber); color: var(--black); text-shadow: none;
+    font-size: 13px;
+    display: flex; justify-content: space-between; gap: 1rem;
+    z-index: 10;
+  }
+  .status span { white-space: nowrap; }
+  .status span:first-child { overflow: hidden; text-overflow: ellipsis; }
+
+  /* boot sequence: only hidden when JS is running and motion is allowed */
+  .booting .boot { visibility: hidden; }
+  .caret::after { content: "█"; animation: blink 1s steps(1) infinite; margin-left: 1px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  @media (max-width: 640px) {
+    body { font-size: 14px; }
+    main { padding-top: 2rem; }
+    .entry, .others li { grid-template-columns: 1fr; gap: 0; }
+    .others li { margin-bottom: .8rem; }
+    .entry .meta { white-space: normal; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .caret::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="prompt">daniele@padova:~$ <b data-type>whoami</b></p>
+    <h1 class="name boot">Daniele<br>Capuzzo</h1>
+    <p class="bio boot">Computer Engineering at the University of Padova.<br>I work on robotics, AI and high-performance computing.</p>
+    <p class="prompt boot">daniele@padova:~$ <b data-type>ls -l ~/projects</b></p>
+  </header>
+
+  <div class="boot">
+  <section aria-labelledby="d1">
+    <h2 class="dir" id="d1">robotics/</h2>
+
+    <article class="entry" data-name="vla-benchmark">
+      <div class="meta">drwxr-xr-x  Python
+2026-10</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/vla-benchmark">vla-benchmark/</a></h3>
+        <p>A test bench that runs Transformer-based and state-space (Mamba) vision-language-action policies through the same LIBERO tasks, so success rate, latency and GPU memory can be compared side by side. Mamba kernels compiled from source for an RTX 5080.</p>
+        <p class="stack">OpenVLA, OpenVLA-OFT, MaIL, RoboMamba, LIBERO, PyTorch</p>
+      </div>
+    </article>
+
+    <article class="entry" data-name="roboMamba-libero">
+      <div class="meta">drwxr-xr-x  Python
+2026-10  fork</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/roboMamba-libero">roboMamba-libero/</a></h3>
+        <p>A port of RoboMamba, a multimodal state-space model for robot reasoning and manipulation, to the LIBERO benchmark for training and fine-tuning.</p>
+        <p class="stack">Mamba, LIBERO, PyTorch</p>
+      </div>
+    </article>
+
+    <article class="entry" data-name="robot-navigation-ir1">
+      <div class="meta">drwxr-xr-x  C++
+2025-11</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/robot-navigation-ir1">robot-navigation-ir1/</a></h3>
+        <p>A mobile robot computes its goal from two AprilTags, drives there with Nav2, and locates round tables by fitting circles to LiDAR clusters. A manual corridor mode takes over where Nav2 struggles.</p>
+        <p class="stack">ROS 2, Nav2, AprilTag, LiDAR</p>
+      </div>
+    </article>
+
+    <article class="entry" data-name="motion-planning-ir2">
+      <div class="meta">drwxr-xr-x  C++
+2026-01</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/motion-planning-ir2">motion-planning-ir2/</a></h3>
+        <p>A UR5 arm swaps two cubes: AprilTags give their poses, HSV thresholding tells red from blue, and two pick-and-place sequences do the rest.</p>
+        <p class="stack">ROS 2, UR5, OpenCV, AprilTag</p>
+      </div>
+    </article>
+  </section>
+
+  <section aria-labelledby="d2">
+    <h2 class="dir" id="d2">ai/</h2>
+
+    <article class="entry" data-name="O3DRN-3Dclassification">
+      <div class="meta">drwxr-xr-x  Python
+2025-11  paper</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/O3DRN-3Dclassification">O3DRN-3Dclassification/</a></h3>
+        <p>An orientation-aware residual network for classifying 3D objects from voxels. Squeeze-and-excitation blocks and dilated convolutions keep it at about 2.1M parameters. Evaluated on ModelNet10 and ModelNet40, with an accompanying paper.</p>
+        <p class="stack">Keras, Optuna, ModelNet</p>
+      </div>
+    </article>
+
+    <article class="entry" data-name="rl-auto-driving">
+      <div class="meta">drwxr-xr-x  Python
+2026-07</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/rl-auto-driving">rl-auto-driving/</a></h3>
+        <p>Highway driving agents trained with DQN, Double DQN, Dueling DQN and D3QN, all written from scratch in PyTorch and compared against a rule-based driver.</p>
+        <p class="stack">PyTorch, Gymnasium, highway-env</p>
+      </div>
+    </article>
+
+    <article class="entry" data-name="malaria-detection">
+      <div class="meta">drwxr-xr-x  C++
+2026-04</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/malaria-detection">malaria-detection/</a></h3>
+        <p>Spritz++: finds every cell on a blood-smear slide with a custom watershed segmentation, then labels each one parasitized or uninfected with a small CNN. Augmentation handles a dataset where only 2.2% of cells are infected.</p>
+        <p class="stack">C++, OpenCV, Keras, ONNX</p>
+      </div>
+    </article>
+  </section>
+
+  <section aria-labelledby="d3">
+    <h2 class="dir" id="d3">hpc/</h2>
+
+    <article class="entry" data-name="cuda-filters">
+      <div class="meta">drwxr-xr-x  CUDA
+2026-07</div>
+      <div>
+        <h3><a href="https://github.com/danieleCapuzzo/cuda-filters">cuda-filters/</a></h3>
+        <p>A separable Gaussian blur optimized step by step: a naive kernel, then a shared-memory tiled one, then a single fused launch. A CLI flag switches between them and a CPU version for direct comparison.</p>
+        <p class="stack">C++, CUDA</p>
+      </div>
+    </article>
+  </section>
+
+  <section aria-labelledby="d5">
+    <h2 class="dir" id="d5">other/</h2>
+    <ul class="others">
+      <li data-name="malaria-light-CNN"><a href="https://github.com/danieleCapuzzo/malaria-light-CNN">malaria-light-CNN/</a><span class="dim">Lightweight CNN vs MobileNetV2 on the NIH malaria dataset</span></li>
+      <li data-name="the-guardian-article-analysis"><a href="https://github.com/danieleCapuzzo/the-guardian-article-analysis">the-guardian-article-analysis/</a><span class="dim">Keyword analysis of Guardian articles, group project</span></li>
+      <li data-name="intelligent-robotics-labs"><a href="https://github.com/danieleCapuzzo/intelligent-robotics-labs">intelligent-robotics-labs/</a><span class="dim">ROS 2 lab solutions for Intelligent Robotics</span></li>
+      <li data-name="battleship-game-cpp"><a href="https://github.com/danieleCapuzzo/battleship-game-cpp">battleship-game-cpp/</a><span class="dim">Battleship in the terminal, C++</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="d6">
+    <p class="prompt" id="d6">daniele@padova:~$ <b>cat contact.txt</b></p>
+    <p style="margin:.4rem 0 0">github  <a href="https://github.com/danieleCapuzzo">github.com/danieleCapuzzo</a></p>
+    <!-- add more lines here, e.g. email / LinkedIn -->
+  </section>
+
+  <section class="shell" aria-label="Interactive shell">
+    <div id="log" aria-live="polite"></div>
+    <div class="line">
+      <label for="cmd">daniele@padova:~$</label>
+      <input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type help">
+    </div>
+  </section>
+  </div>
+</main>
+
+<div class="status" aria-hidden="true">
+  <span>[0] projects*&nbsp;&nbsp;danielecapuzzo.github.io</span>
+  <span id="clock"></span>
+</div>
+
+<script>
+(() => {
+  const html = document.documentElement;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  // tmux clock
+  const clock = document.getElementById("clock");
+  const tick = () => clock.textContent = new Date().toLocaleString("en-GB",
+    { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  tick(); setInterval(tick, 30000);
+
+  // boot sequence: type the two commands, reveal their output
+  async function boot() {
+    const typed = [...document.querySelectorAll("[data-type]")];
+    const boots = [...document.querySelectorAll(".boot")];
+    if (reduced) return;
+    document.body.classList.add("booting");
+    const texts = typed.map(t => t.textContent);
+    typed.forEach(t => t.textContent = "");
+    const type = async (el, text) => {
+      el.classList.add("caret");
+      for (const ch of text) { el.textContent += ch; await wait(55); }
+      await wait(220);
+      el.classList.remove("caret");
+    };
+    await wait(350);
+    await type(typed[0], texts[0]);
+    boots[0].style.visibility = "visible";            // name
+    await wait(160); boots[1].style.visibility = "visible"; // bio
+    await wait(260); boots[2].style.visibility = "visible"; // 2nd prompt
+    await type(typed[1], texts[1]);
+    document.body.classList.remove("booting");
+    boots.forEach(b => b.style.visibility = "");
+  }
+  boot();
+
+  // tiny shell
+  const input = document.getElementById("cmd");
+  const log = document.getElementById("log");
+  const projects = [...document.querySelectorAll("[data-name]")].map(el => ({
+    name: el.dataset.name, url: el.querySelector("a").href
+  }));
+  const out = (text) => { const p = document.createElement("p"); p.textContent = text; log.appendChild(p); };
+  const commands = {
+    help: () => "help, ls, whoami, open <project>, github, clear",
+    ls: () => projects.map(p => p.name + "/").join("\n"),
+    whoami: () => "daniele capuzzo — robotics, ai, hpc",
+    github: () => { window.open("https://github.com/danieleCapuzzo", "_blank", "noopener"); return "opening github…"; },
+    open: (arg) => {
+      if (!arg) return "usage: open <project>";
+      const p = projects.find(p => p.name.toLowerCase().startsWith(arg.toLowerCase().replace(/\/$/, "")));
+      if (!p) return `open: ${arg}: no such project (try ls)`;
+      window.open(p.url, "_blank", "noopener"); return `opening ${p.name}…`;
+    },
+    clear: () => { log.innerHTML = ""; return null; },
+    sudo: () => "daniele is not in the sudoers file. This incident will be reported.",
+  };
+  input.addEventListener("keydown", e => {
+    if (e.key === "Tab") {
+      const [c, a = ""] = input.value.split(/\s+/);
+      if (c === "open" && a) {
+        const p = projects.find(p => p.name.toLowerCase().startsWith(a.toLowerCase()));
+        if (p) { e.preventDefault(); input.value = "open " + p.name; }
+      }
+      return;
+    }
+    if (e.key !== "Enter") return;
+    const raw = input.value.trim(); input.value = "";
+    if (!raw) return;
+    out("daniele@padova:~$ " + raw);
+    const [name, ...rest] = raw.split(/\s+/);
+    const fn = commands[name.toLowerCase()];
+    const res = fn ? fn(rest.join(" ")) : `${name}: command not found (try help)`;
+    if (res) out(res);
+    input.scrollIntoView({ block: "nearest" });
+  });
+})();
+</script>
+</body>
+</html>
